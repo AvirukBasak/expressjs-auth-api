@@ -33,10 +33,10 @@ if (!process.env.DATABASE_NAME) {
     process.exit(1);
 }
 
-if (!process.env.HASH_SALT) {
+if (!process.env.HASH_SALT_LENGTH) {
     console.error('ERROR: '
-        + 'couldn\'t find HASH_SALT enviroment variable\n'
-        + `  add HASH_SALT to '${path.join(__dirname, '.env.local')}'`
+        + 'couldn\'t find HASH_SALT_LENGTH enviroment variable\n'
+        + `  add HASH_SALT_LENGTH to '${path.join(__dirname, '.env.local')}'`
     );
     process.exit(1);
 }

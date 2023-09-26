@@ -80,7 +80,11 @@ auth.post('/', async (req, res) => {
                     .end();
                 return;
             }
-            passwd = bcrypt.hashSync(body.passwd.toString(), process.env.HASH_SALT);
+            try {
+                passwd = bcrypt.hashSync(body.passwd.toString(), Number(process.env.HASH_SALT_LENGTH));
+            } catch (e) {
+                res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
+            }
 
             let data = null;
             try {
@@ -88,7 +92,7 @@ auth.post('/', async (req, res) => {
                 data = await db.collection('auth').findOne({ email });
             }
             catch (e) {
-                res.status(500).json({ btoken: null, ftoken: null }).end();
+                res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
                 return;
             }
 
@@ -110,14 +114,14 @@ auth.post('/', async (req, res) => {
                     // register user
                     await db.collection('auth').insertOne({ email, passwd, btoken, ftoken: [ftoken] });
                 } catch (e) {
-                    res.status(500).json({ btoken: null, ftoken: null }).end();
+                    res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
                     return;
                 }
             } else {
                 try {
                     await db.collection('auth').updateOne({ btoken }, { '$push': { ftoken } });
                 } catch (e) {
-                    res.status(500).json({ btoken: null, ftoken: null }).end();
+                    res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
                     return;
                 }
             }
@@ -141,7 +145,7 @@ auth.post('/', async (req, res) => {
                 data = await db.collection('auth').findOne({ ftoken: { '$elemMatch': ftoken } });
             }
             catch (e) {
-                res.status(500).json({ email: null, btoken: null }).end();
+                res.status(500).json({ email: null, btoken: null, e: e.toString() }).end();
                 return;
             }
 
