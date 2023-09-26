@@ -1,0 +1,15 @@
+.app {
+    max-width: 100%;
+    width: 100%;
+    padding: 20px;
+}
+
+.app h1 {
+    color: rgb(169, 169, 197);
+    margin: 0;
+    padding: 20px 0;
+}
+
+.app p {
+    color: white;
+}

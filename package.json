@@ -1,0 +1,10 @@
+{
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js dev",
+    "start": "node index.js start",
+    "build": "node index.js build",
+    "install": "node index.js install",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
