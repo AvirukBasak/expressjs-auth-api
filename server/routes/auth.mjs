@@ -1,5 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 import conn from '../lib/mongodb.mjs';
 import { ObjectId } from 'mongodb';
@@ -80,21 +81,10 @@ auth.post('/', async (req, res) => {
                     .end();
                 return;
             }
-            try {
-                passwd = bcrypt.hashSync(body.passwd.toString(), Number(process.env.HASH_SALT_LENGTH));
-            } catch (e) {
-                res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
-            }
+            passwd = bcrypt.hashSync(passwd, Number(process.env.HASH_SALT_LENGTH));
 
-            let data = null;
-            try {
-                /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
-                data = await db.collection('auth').findOne({ email });
-            }
-            catch (e) {
-                res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
-                return;
-            }
+            /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
+            const data = await db.collection('auth').findOne({ email });
 
             // email registered but password not matching
             if (data?.email === email && data?.passwd !== passwd) {
@@ -109,29 +99,21 @@ auth.post('/', async (req, res) => {
 
             // no btoken, i.e. user not registered
             if (!data?.btoken) {
+                // register user
                 btoken = crypto.randomUUID();
-                try {
-                    // register user
-                    await db.collection('auth').insertOne({ email, passwd, btoken, ftoken: [ftoken] });
-                } catch (e) {
-                    res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
-                    return;
-                }
+                await db.collection('auth').insertOne({ email, passwd, btoken, ftoken: [ftoken] });
             } else {
-                try {
-                    await db.collection('auth').updateOne({ btoken }, { '$push': { ftoken } });
-                } catch (e) {
-                    res.status(500).json({ btoken: null, ftoken: null, e: e.toString() }).end();
-                    return;
-                }
+                await db.collection('auth').updateOne({ btoken }, { '$push': { ftoken } });
             }
 
-            res.status(200).json({ btoken, ftoken }).end();
+            res.status(200)
+                .json({ btoken, ftoken })
+                .end();
             return;
             break;
         }
         case 'VERIFY': {
-            let ftoken = body.ftoken?.toString();
+            const ftoken = body.ftoken?.toString();
             if (!ftoken) {
                 res.status(400)
                     .json({ code: ErrCodes.VERIFY_MISSING_FIELD_FTOKEN })
@@ -139,22 +121,19 @@ auth.post('/', async (req, res) => {
                 return;
             }
 
-            let data = null;
-            try {
-                /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
-                data = await db.collection('auth').findOne({ ftoken: { '$elemMatch': ftoken } });
-            }
-            catch (e) {
-                res.status(500).json({ email: null, btoken: null, e: e.toString() }).end();
-                return;
-            }
+            /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
+            const data = await db.collection('auth').findOne({ ftoken: { '$elemMatch': ftoken } });
 
             if (!data?.btoken) {
-                res.status(404).json({ email: null, btoken: null }).end();
+                res.status(404)
+                    .json({ email: null, btoken: null })
+                    .end();
                 return;
             }
 
-            res.status(200).json({ email: data.email, btoken: data.btoken }).end();
+            res.status(200)
+                .json({ email: data.email, btoken: data.btoken })
+                .end();
             return;
             break;
         }

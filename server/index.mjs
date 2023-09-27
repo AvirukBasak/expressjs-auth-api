@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use(function(req, res, next) {
-    console.log(`[${(new Date()).toLocaleString()}] ${req.ip} ${req.method} ${req.url}`);
+    console.log(`[${(new Date()).toLocaleString()}] ${req.ip} ${req.method}: ${req.url}`);
     next();
 });
 
@@ -21,8 +21,10 @@ app.use('/auth', auth);
 app.use('/', express.static(PATHS.build));
 
 // global error handling
-app.use((err, _req, res, next) => {
-    res.status(500).send('Internal Server Error');
+app.use((err, req, res, next) => {
+    console.error(`[${(new Date()).toLocaleString()}] ${req.ip} ERROR: ${err?.stack}`);
+    res.status(500).json({}).end();
+    next();
 });
 
 // start the Express server
