@@ -18,6 +18,8 @@ You need to run the following based on your requirements:
 
 The Authentication API provides endpoints for user authentication and verification. It is designed to be used in a stateless backend system and involves two main operations: `AUTH` and `VERIFY`. The API is intended to secure user sessions and provides tokens for backend and frontend authentication.
 
+Use Postman for testing.
+
 ### Endpoints
 
 #### 1. Authentication (AUTH)
@@ -50,7 +52,7 @@ The Authentication API provides endpoints for user authentication and verificati
   - 401 Unauthorized: Authentication failed
 
 - **Notes**:
-  - The `btoken` is intended for backend use and remains constant.
+  - The `btoken` is intended for backend use and remains unique for each user. This token should NEVER go to any frontend.
   - The `ftoken` should be saved in the frontend and will change on each new authentication.
 
 #### 2. Verification (VERIFY)
@@ -111,8 +113,8 @@ The Authentication API relies on a MongoDB document schema to store user informa
 
 - `email`: The user's email address.
 - `passwd`: The user's password (hashed and securely stored).
-- `btoken`: The token used for backend authentication (constant for each user).
-- `ftoken`: An array of tokens used for frontend authentication (changes on each new authentication).
+- `btoken`: Is intended for backend use and remains unique for each user. This token should NEVER go to any frontend.
+- `ftoken`: An array of tokens used for frontend verification (changes on each new authentication).
 
 ### Usage Guidelines
 
