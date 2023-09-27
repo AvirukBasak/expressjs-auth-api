@@ -22,31 +22,6 @@ const ErrCodes = {
     VERIFY_MISSING_FIELD_FTOKEN: 'verify:missing_field_ftoken',
 };
 
-/**
- * auth JSON schema for AUTH: used once per session
- * req: POST {
- *   op: "AUTH",
- *   email: "user-mail",
- *   passwd: "user-password"
- * }
- * res: {
- *   btoken: "token-to-use-in-backend",          // this is used backend only, and does not change on new AUTH
- *   ftoken: "token-to-save-in-frontend"         // this is saved in frontend, and will change on new AUTH
- * }
- * 
- * auth JSON schema for VERIFY: used multiple times to validate user during a session in a stateless backend
- * req: POST {
- *   op: "VERIFY",
- *   ftoken: "token-to-save-in-frontend"
- * }
- * res: {
- *   email: "user-mail" or null,
- *   btoken: "token-to-use-in-backend" or null   // valid btoken if user found else null
- * }
- * 
- * MongoDB document schema:
- * { email: string, passwd: string, btoken: string, ftoken: string[] }
- */
 auth.post('/', async (req, res) => {
     const body = req.body;
     if (!body) {
@@ -83,12 +58,11 @@ auth.post('/', async (req, res) => {
             }
             passwd = bcrypt.hashSync(passwd, Number(process.env.HASH_SALT_LENGTH));
 
-            /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
             const data = await db.collection('auth').findOne({ email });
 
             // email registered but password not matching
             if (data?.email === email && data?.passwd !== passwd) {
-                res.status(403)
+                res.status(401)
                     .json({ code: ErrCodes.AUTH_INCORRECT_PASSWD })
                     .end();
                 return;
@@ -125,7 +99,7 @@ auth.post('/', async (req, res) => {
             const data = await db.collection('auth').findOne({ ftoken: { '$elemMatch': ftoken } });
 
             if (!data?.btoken) {
-                res.status(404)
+                res.status(401)
                     .json({ email: null, btoken: null })
                     .end();
                 return;
