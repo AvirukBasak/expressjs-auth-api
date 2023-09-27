@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 import conn from '../lib/mongodb.mjs';
 import { ObjectId } from 'mongodb';
@@ -49,19 +49,19 @@ auth.post('/', async (req, res) => {
                 return;
             }
 
-            let passwd = body.passwd?.toString();
+            const passwd = body.passwd?.toString();
             if (!passwd) {
                 res.status(400)
                     .json({ code: ErrCodes.AUTH_MISSING_FIELD_PASSWD })
                     .end();
                 return;
             }
-            passwd = bcrypt.hashSync(passwd, Number(process.env.HASH_SALT_LENGTH));
 
             const data = await db.collection('auth').findOne({ email });
+            const passwdMatching = bcrypt.compareSync(passwd, data?.passwd || '');
 
             // email registered but password not matching
-            if (data?.email === email && data?.passwd !== passwd) {
+            if (data?.email === email && !passwdMatching) {
                 res.status(401)
                     .json({ code: ErrCodes.AUTH_INCORRECT_PASSWD })
                     .end();
@@ -69,13 +69,14 @@ auth.post('/', async (req, res) => {
             }
 
             let btoken = data?.btoken;
-            const ftoken = crypto.randomUUID();
+            const ftoken = uuidv4();
 
             // no btoken, i.e. user not registered
             if (!data?.btoken) {
                 // register user
-                btoken = crypto.randomUUID();
-                await db.collection('auth').insertOne({ email, passwd, btoken, ftoken: [ftoken] });
+                btoken = uuidv4();
+                const passwd_hash = bcrypt.hashSync(passwd, Number(process.env.HASH_SALT_LENGTH));
+                await db.collection('auth').insertOne({ email, passwd: passwd_hash, btoken, ftoken: [ftoken] });
             } else {
                 await db.collection('auth').updateOne({ btoken }, { '$push': { ftoken } });
             }
@@ -95,8 +96,16 @@ auth.post('/', async (req, res) => {
                 return;
             }
 
-            /* document schema { email: string, passwd: string, btoken: string, ftoken: string[] } */
-            const data = await db.collection('auth').findOne({ ftoken: { '$elemMatch': ftoken } });
+            /* findOne: returns single document as JSON
+             * filter parameter:
+             *   - elemMatch: matches if data present in db array
+             *   - eq: equality
+             * options parameter:
+             *   - projection: the option to choose which fields should be projected in response */
+            const data = await db.collection('auth').findOne(
+                { ftoken: { '$elemMatch': { '$eq': ftoken }}},
+                { projection: { email: 1, btoken: 1 }}
+            );
 
             if (!data?.btoken) {
                 res.status(401)
