@@ -38,4 +38,5 @@ RUN npm run build
 # Expose the application port
 EXPOSE 3000
 
+RUN chmod +x ./start.sh
 CMD sh -c ./start.sh
