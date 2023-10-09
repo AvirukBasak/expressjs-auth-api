@@ -12,7 +12,8 @@ Create a new project by cloning this repo.
 - Add local styles in `src/styles/*.module.css`
 - Add images and fonts in `public/`
 
-*Note*: All `public` resources should be loaded in `.css` and `.jsx` files with respect to `/`.
+*Note*: All `public` resources should be loaded in `.css` and `.jsx` files with respect to `@public/`.
+However, when using HTML in JSX (like an `img` tag, publi resources should be loaded wrt `/`)
 
 ## Run server
 ```

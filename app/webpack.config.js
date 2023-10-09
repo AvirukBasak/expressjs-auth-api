@@ -25,7 +25,7 @@ module.exports = {
         /* the magic that allows accessing public res via `/`
            and src files via `@/` prefixes */
         alias: {
-            '': Paths.public,
+            '@public': Paths.public,
             '@': Paths.src,
         },
     },
